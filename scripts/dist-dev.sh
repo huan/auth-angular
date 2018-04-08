@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+npm run lint
 npm run ng:packagr
 
 for folder in ~/chatie/{app,db}/node_modules/auth-angular/; do

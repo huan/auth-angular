@@ -77,8 +77,8 @@ export class Auth {
    *  - https://github.com/ReactiveX/RxJS/issues/1478
    *  - https://github.com/Reactive-Extensions/RxJS/issues/1088
    */
-  private         valid$: BehaviorSubject <boolean>
-  public readonly valid:  Observable      <boolean>
+  // private         valid$: BehaviorSubject <boolean>
+  // public readonly valid:  Observable      <boolean>
 
   // private accessToken?:  string
   // private refreshToken?: string
@@ -124,7 +124,7 @@ export class Auth {
     this.refreshToken$  = new BehaviorSubject<string>('')
 
     this.profile$ = new BehaviorSubject<Auth0UserProfile>({} as Auth0UserProfile)
-    this.valid$   = new BehaviorSubject<boolean>(false)
+    // this.valid$   = new BehaviorSubject<boolean>(false)
 
     /**
      * Init asObservables
@@ -133,8 +133,19 @@ export class Auth {
     this.idToken      = this.idToken$     .asObservable().share().distinctUntilChanged()
     this.refreshToken = this.refreshToken$.asObservable().share().distinctUntilChanged()
 
-    this.valid    = this.valid$.asObservable()  .share().distinctUntilChanged()
+    // this.valid    = this.valid$.asObservable()  .share().distinctUntilChanged()
     this.profile  = this.profile$.asObservable().share().distinctUntilChanged()
+
+    this.idToken.subscribe(token => {
+      if (token) {
+        this.scheduleRefresh(token)
+        this.scheduleExpire(token)
+      } else {
+        this.unscheduleRefresh()
+        this.unscheduleExpire()
+      }
+
+    })
 
     /**
      * Load from Storage
@@ -153,13 +164,14 @@ export class Auth {
       localStorage.getItem(STORAGE_KEY.USER_PROFILE) || '""',
     ) as Auth0UserProfile
 
+    // TODO: validate id_token
+
     this.accessToken$ .next(accessToken)
     this.idToken$     .next(idToken)
     this.refreshToken$.next(refreshToken)
 
     this.profile$.next(profile)
-    // TODO: validate id_token
-    this.valid$.next(true)
+    // this.valid$.next(true)
 
     this.log.silly('Auth', 'load() idToken=%s, profile=%s',
                             idToken,
@@ -179,11 +191,7 @@ export class Auth {
   }
 
   public async logout(): Promise<void> {
-    this.log.verbose('Auth', 'remove()')
-
-    // Unschedule the token refresh
-    this.unscheduleRefresh()
-    this.unscheduleExpire()
+    this.log.verbose('Auth', 'logout()')
 
     // Remove token from localStorage
     localStorage.removeItem(STORAGE_KEY.ACCESS_TOKEN)
@@ -195,7 +203,7 @@ export class Auth {
     this.idToken$     .next('')
     this.refreshToken$.next('')
     this.profile$     .next({} as any)
-    this.valid$       .next(false)
+    // this.valid$       .next(false)
   }
 
   /**
@@ -246,13 +254,13 @@ export class Auth {
     // Rxjs.Observable.fromEvent(auth0Lock, 'authorization_error')
     auth0Lock.on('unrecoverable_error', error => {
       this.log.warn('Auth', 'login() on(unrecoverable_error) error:%s', error)
-      this.valid$.error(error)
+      this.idToken$.error(error)
       auth0Lock.hide()
     })
 
     auth0Lock.on('authorization_error', error => {
       this.log.verbose('Auth', 'login() on(authorization_error)')
-      this.valid$.error(error)
+      this.idToken$.error(error)
     })
 
     // Add callback for lock `authenticated` event
@@ -262,13 +270,14 @@ export class Auth {
                                 Object.keys(authResult).join(','),
                       )
 
-      this.accessToken$ .next(authResult.accessToken)
-      this.idToken$     .next(authResult.idToken)
-
       if (!authResult.idToken) {
         this.log.error('Auth', 'login() Auth0Lock.on(authenticated) no idToken')
         return
       }
+
+      this.accessToken$ .next(authResult.accessToken)
+      this.idToken$     .next(authResult.idToken)
+      this.refreshToken$.next(authResult.refreshToken || '')
 
       const profile = await this.getProfile()
       this.profile$.next(profile)
@@ -285,10 +294,9 @@ export class Auth {
       // }) // Auth0Lock.getProfile
 
       await this.save()
-      this.scheduleRefresh()
       auth0Lock.hide()
       this.log.verbose('Auth', 'getAuth0Lock() Auth0Lock.on(authenticated) _valid.next(true)')
-      this.valid$.next(true)
+      // this.valid$.next(true)
     })
 
     return auth0Lock
@@ -399,20 +407,19 @@ getProfile(idToken: string): Observable<any>{
   //   return !invalid
   // }
 
-  private scheduleExpire(idToken?: string): void {
-    this.log.verbose('Auth', 'scheduleExpire()')
+  private scheduleExpire(idToken: string): void {
+    this.log.verbose('Auth', 'scheduleExpire(idToken=%s)', idToken)
+
+    if (!idToken) {
+      this.log.error('Auth', 'scheduleExpire() no idToken')
+      this.idToken$.error(new Error('scheduleExpire() no idToken'))
+      return
+    }
 
     if (this.expireTimer) {
       this.log.silly('Auth', 'scheduleExpire() clearTimeout()')
       clearTimeout(this.expireTimer)
       this.expireTimer = undefined
-    }
-
-    if (!idToken) {
-      this.log.verbose('Auth', 'scheduleExpire() no idToken')
-      this.log.verbose('Auth', 'scheduleExpire() valid$.next(false)')
-      this.valid$.next(false)
-      return
     }
 
     try {
@@ -426,7 +433,7 @@ getProfile(idToken: string): Observable<any>{
 
       this.expireTimer = setTimeout(() => {
         this.log.verbose('Auth', 'scheduleExpire() _valid.next(false)')
-        this.valid$.next(false)
+        this.idToken$.next('')
       }, timeout)
       this.log.silly('Auth', 'scheduleExpire() setTimeout(,%s) = %s hours',
                               timeout,
@@ -437,18 +444,19 @@ getProfile(idToken: string): Observable<any>{
     }
   }
 
-  public async scheduleRefresh(): Promise<void> {
-    this.log.verbose('Auth', 'scheduleRefresh()')
+  public async scheduleRefresh(idToken: string): Promise<void> {
+    this.log.verbose('Auth', 'scheduleRefresh(idToken=%s)', idToken)
 
-    // If the user is authenticated, use the token stream
-    // provided by angular2-jwt and flatMap the token
-
-    const idToken = await this.idToken.first().toPromise()
+    // const idToken = await this.idToken.first().toPromise()
 
     if (!idToken) {
       this.log.error('Auth', 'scheduleRefresh() error: no idToken')
+      this.idToken$.error(new Error('scheduleRefresh() no idToken'))
       return
     }
+
+    // If the user is authenticated, use the token stream
+    // provided by angular2-jwt and flatMap the token
     const source = Observable.of(idToken).flatMap(token => {
       if (!token) {
         const e = new Error('scheduleRefresh() failed to get token')
@@ -479,10 +487,10 @@ getProfile(idToken: string): Observable<any>{
   public async startupTokenRefresh() {
     this.log.verbose('Auth', 'startupTokenRefresh()')
 
-    const valid = await this.valid.first().toPromise()
+    const idToken = await this.idToken.first().toPromise()
 
     // http://stackoverflow.com/a/34190965/1123955
-    if (valid) {
+    if (idToken) {
 
       // FIXME: uncomment the code below
 
