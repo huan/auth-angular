@@ -31,7 +31,7 @@ export function jwtOptionsFactory() {
   return jwtOptions.config
 }
 
-function authFactory(
+export function authFactory(
   log:              Brolog,
   jwtHelperService: JwtHelperService,
 ) {
