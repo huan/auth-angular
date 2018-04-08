@@ -1,6 +1,9 @@
 # AUTH-ANGULAR
 The Authing Service/Provider for Angular
 
+![Auth Angular Logo](https://zixia.github.io/auth-angular/images/auth-angular-logo.png)
+> Picture Credit: [Angular 5 Authentication](https://www.genuitec.com/angular-5-authentication/)
+
 # WIP: WORKING IN PROGRESS
 
 **Please come back after 4 weeks.**
@@ -17,6 +20,7 @@ The Authing Service/Provider for Angular
 ## Token
 
 * [id_token v.s. access_token](https://auth0.com/docs/api-auth/why-use-access-tokens-to-secure-apis)
+* [Refresh Tokens: When to Use Them and How They Interact with JWTs](https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/)
 
 ## Auth0
 

@@ -136,6 +136,15 @@ export class Auth {
     // this.valid    = this.valid$.asObservable()  .share().distinctUntilChanged()
     this.profile  = this.profile$.asObservable().share().distinctUntilChanged()
 
+    // /**
+    //  * Init
+    //  */
+    // this.init()
+  }
+
+  private async init() {
+    this.log.verbose('Auth', 'init()')
+
     this.idToken.subscribe(token => {
       if (token) {
         this.scheduleRefresh(token)
@@ -144,7 +153,6 @@ export class Auth {
         this.unscheduleRefresh()
         this.unscheduleExpire()
       }
-
     })
 
     /**
@@ -275,12 +283,16 @@ export class Auth {
         return
       }
 
+      /**
+       * make sure when the subscriber received the new idToken, there's a updated profile
+       * by call next(profile) before next(idToken)
+       */
+      const profile = await this.getProfile(authResult.accessToken)
+      this.profile$.next(profile)
+
       this.accessToken$ .next(authResult.accessToken)
       this.idToken$     .next(authResult.idToken)
       this.refreshToken$.next(authResult.refreshToken || '')
-
-      const profile = await this.getProfile()
-      this.profile$.next(profile)
 
       // auth0Lock.getProfile(this.idToken, (error, profile) => {
       //   if (error) {
@@ -302,15 +314,15 @@ export class Auth {
     return auth0Lock
   }
 
-  public async getProfile(): Promise<Auth0UserProfile> {
+  public async getProfile(accessToken: string): Promise<Auth0UserProfile> {
     this.log.verbose('Auth', 'getProfile()')
 
     return new Promise<Auth0UserProfile>(async (resolve, reject) => {
-      const idToken     = await this.idToken.first().toPromise()
-      const accessToken = await this.accessToken.first().toPromise()
+      // const idToken     = await this.idToken.first().toPromise()
+      // const accessToken = await this.accessToken.first().toPromise()
 
-      if (!idToken || !accessToken) {
-        const e = new Error('no id/access token')
+      if (!accessToken) {
+        const e = new Error('no access token')
         this.log.error('Auth', 'getProfile() %s', e.message)
         return reject(e)
       }
@@ -433,7 +445,7 @@ getProfile(idToken: string): Observable<any>{
 
       this.expireTimer = setTimeout(() => {
         this.log.verbose('Auth', 'scheduleExpire() _valid.next(false)')
-        this.idToken$.next('')
+        this.logout()
       }, timeout)
       this.log.silly('Auth', 'scheduleExpire() setTimeout(,%s) = %s hours',
                               timeout,
