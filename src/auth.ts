@@ -40,11 +40,6 @@ const AUTH0 = {
   DOMAIN:     'zixia.auth0.com',
 }
 
-// export interface AuthSnapshot {
-//   valid:    boolean,
-//   profile:  Auth0UserProfile,
-// }
-
 @Injectable()
 export class Auth {
 
@@ -68,8 +63,6 @@ export class Auth {
   private refreshToken$:        BehaviorSubject <string>
   public readonly refreshToken: Observable      <string>
 
-  // private localProfile: Auth0UserProfile
-
   /**
    * Persisting user authentication with BehaviorSubject in Angular
    *  - https://netbasal.com/angular-2-persist-your-login-status-with-behaviorsubject-45da9ec43243
@@ -77,26 +70,6 @@ export class Auth {
    *  - https://github.com/ReactiveX/RxJS/issues/1478
    *  - https://github.com/Reactive-Extensions/RxJS/issues/1088
    */
-  // private         valid$: BehaviorSubject <boolean>
-  // public readonly valid:  Observable      <boolean>
-
-  // private accessToken?:  string
-  // private refreshToken?: string
-
-  // private _idToken?:     string
-  // private get idToken() {
-  //   this.log.silly('Auth', 'get idToken() = %s', this._idToken && this._idToken.length)
-  //   return this._idToken
-  // }
-  // private set idToken(newIdToken) {
-  //   this.log.verbose('Auth', 'set idToken(%s)', newIdToken && newIdToken.length)
-  //   this._idToken = newIdToken
-  //   if (newIdToken) {
-  //     this.scheduleExpire(newIdToken)
-  //   } else {
-  //     this.unscheduleExpire()
-  //   }
-  // }
 
   // TODO: the above scheduleExpire() & unscheduleExpire() should be checked in other place.
 
