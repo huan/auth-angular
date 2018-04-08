@@ -68,6 +68,7 @@
       "entryFile": "index.ts"
     },
     "whitelistedNonPeerDependencies": [
+      "@auth0/angular-jwt",
       "auth0-js",
       "auth0-lock"
     ]
