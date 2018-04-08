@@ -31,7 +31,6 @@
       "index.ts"
     , "bin/*.ts"
     , "examples/**/*.ts"
-    , "generated-schemas/**/*.ts"
     , "src/**/*.ts"
     , "scripts/**/*.ts"
     , "tests/**/*.spec.ts"

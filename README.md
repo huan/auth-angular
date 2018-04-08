@@ -14,6 +14,10 @@ The Authing Service/Provider for Angular
 
 # RESOURCES
 
+## Token
+
+* [id_token v.s. access_token](https://auth0.com/docs/api-auth/why-use-access-tokens-to-secure-apis)
+
 ## Auth0
 
 * [Auth0 Ionic2 Quick Start](https://auth0.com/docs/quickstart/native/ionic2)

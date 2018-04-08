@@ -2,7 +2,6 @@ import {
   Injectable,
 }                     from '@angular/core'
 // import { HttpClient } from '@angular/common/http'
-import { Storage }    from '@ionic/storage'
 
 import {
   JwtHelperService,
@@ -12,7 +11,6 @@ import {
   WebAuth,
 }                   from 'auth0-js'
 import Auth0Lock    from 'auth0-lock'
-
 import { Brolog }   from 'brolog'
 import {
   BehaviorSubject,
@@ -42,16 +40,15 @@ const AUTH0 = {
   DOMAIN:     'zixia.auth0.com',
 }
 
-export interface AuthSnapshot {
-  valid:    boolean,
-  profile:  Auth0UserProfile,
-}
+// export interface AuthSnapshot {
+//   valid:    boolean,
+//   profile:  Auth0UserProfile,
+// }
 
 @Injectable()
 export class Auth {
-  public snapshot: AuthSnapshot
 
-  private expireTimer: NodeJS.Timer | null
+  private expireTimer?: NodeJS.Timer
 
   /**
    * User Profile: https://auth0.com/docs/user-profile
@@ -59,14 +56,19 @@ export class Auth {
    * Control the contents of an ID token: https://auth0.com/docs/tokens/id-token#control-the-contents-of-an-id-token
    * OpenID Connect Standard Claims: https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
    */
-  private _profile: BehaviorSubject<Auth0UserProfile>
-  public get profile() {
-    this.log.verbose('Auth', 'get profile()')
-    return this._profile.asObservable()
-                        .share()
-                        .distinctUntilChanged()
-  }
-  private localProfile: Auth0UserProfile
+  private         profile$:     BehaviorSubject <Auth0UserProfile>
+  public readonly profile:      Observable      <Auth0UserProfile>
+
+  private accessToken$:         BehaviorSubject <string>
+  public readonly accessToken:  Observable      <string>
+
+  private idToken$:             BehaviorSubject <string>
+  public readonly idToken:      Observable      <string>
+
+  private refreshToken$:        BehaviorSubject <string>
+  public readonly refreshToken: Observable      <string>
+
+  // private localProfile: Auth0UserProfile
 
   /**
    * Persisting user authentication with BehaviorSubject in Angular
@@ -75,30 +77,28 @@ export class Auth {
    *  - https://github.com/ReactiveX/RxJS/issues/1478
    *  - https://github.com/Reactive-Extensions/RxJS/issues/1088
    */
-  private _valid: BehaviorSubject<boolean>
-  public get valid() {
-    this.log.verbose('Auth', 'get valid()')
-    return this._valid.asObservable() // .share()
-                      .share()
-                      .distinctUntilChanged()
-  }
+  private         valid$: BehaviorSubject <boolean>
+  public readonly valid:  Observable      <boolean>
 
-  private accessToken:  string | null = null
-  private refreshToken: string | null = null
-  private _idToken:     string | null = null
-  private get idToken() {
-    this.log.silly('Auth', 'get idToken() = %s', this._idToken && this._idToken.length)
-    return this._idToken
-  }
-  private set idToken(newIdToken) {
-    this.log.verbose('Auth', 'set idToken(%s)', newIdToken && newIdToken.length)
-    this._idToken = newIdToken
-    if (newIdToken) {
-      this.scheduleExpire(newIdToken)
-    } else {
-      this.unscheduleExpire()
-    }
-  }
+  // private accessToken?:  string
+  // private refreshToken?: string
+
+  // private _idToken?:     string
+  // private get idToken() {
+  //   this.log.silly('Auth', 'get idToken() = %s', this._idToken && this._idToken.length)
+  //   return this._idToken
+  // }
+  // private set idToken(newIdToken) {
+  //   this.log.verbose('Auth', 'set idToken(%s)', newIdToken && newIdToken.length)
+  //   this._idToken = newIdToken
+  //   if (newIdToken) {
+  //     this.scheduleExpire(newIdToken)
+  //   } else {
+  //     this.unscheduleExpire()
+  //   }
+  // }
+
+  // TODO: the above scheduleExpire() & unscheduleExpire() should be checked in other place.
 
   private refreshSubscription: Subscription
 
@@ -106,53 +106,96 @@ export class Auth {
     public log:         Brolog,
     // public httpClient:  HttpClient,
     public jwtHelper:   JwtHelperService,
-    public storage:     Storage,
   ) {
     this.log.verbose('Auth', 'constructor()')
 
-    this.init()
+    // this.snapshot     = {
+    //   valid: false,
+    //   profile: {},
+    // } as AuthSnapshot
+
+    // this.localProfile = {} as Auth0UserProfile
+
+    /**
+     * Init BehaviorSubjects
+     */
+    this.accessToken$   = new BehaviorSubject<string>('')
+    this.idToken$       = new BehaviorSubject<string>('')
+    this.refreshToken$  = new BehaviorSubject<string>('')
+
+    this.profile$ = new BehaviorSubject<Auth0UserProfile>({} as Auth0UserProfile)
+    this.valid$   = new BehaviorSubject<boolean>(false)
+
+    /**
+     * Init asObservables
+     */
+    this.accessToken  = this.accessToken$ .asObservable().share().distinctUntilChanged()
+    this.idToken      = this.idToken$     .asObservable().share().distinctUntilChanged()
+    this.refreshToken = this.refreshToken$.asObservable().share().distinctUntilChanged()
+
+    this.valid    = this.valid$.asObservable()  .share().distinctUntilChanged()
+    this.profile  = this.profile$.asObservable().share().distinctUntilChanged()
+
+    /**
+     * Load from Storage
+     */
+    this.load()
   }
 
-  public async init() {
-    this.log.verbose('Auth', 'init()')
+  public async load(): Promise<void> {
+    this.log.verbose('Auth', 'load()')
 
-    this.snapshot     = {} as AuthSnapshot
-    this.localProfile = {} as Auth0UserProfile
+    const accessToken  = localStorage.getItem(STORAGE_KEY.ACCESS_TOKEN)   || ''
+    const idToken      = localStorage.getItem(STORAGE_KEY.ID_TOKEN)       || ''
+    const refreshToken = localStorage.getItem(STORAGE_KEY.REFRESH_TOKEN)  || ''
 
-    this._profile = new BehaviorSubject<Auth0UserProfile>({} as Auth0UserProfile)
-    this._profile.subscribe(p => this.snapshot.profile = p)
+    const profile = JSON.parse(
+      localStorage.getItem(STORAGE_KEY.USER_PROFILE) || '""',
+    ) as Auth0UserProfile
 
-    this._valid = new BehaviorSubject<boolean>(false)
-    this._valid.subscribe(v => this.snapshot.valid = v)
+    this.accessToken$ .next(accessToken)
+    this.idToken$     .next(idToken)
+    this.refreshToken$.next(refreshToken)
 
-    try {
+    this.profile$.next(profile)
+    // TODO: validate id_token
+    this.valid$.next(true)
 
-      await this.load()
+    this.log.silly('Auth', 'load() idToken=%s, profile=%s',
+                            idToken,
+                            JSON.stringify(profile),
+                  )
+  }
 
-      // if (this.idToken && this.snapshot.profile) {
-      if (this.authenticated()) {
-        this.log.silly('Auth', 'init() from storage for user({email:%s})', this.snapshot.profile.email)
+  public async save(): Promise<void> {
+    this.log.verbose('Auth', 'save()')
 
-        this._profile.next(this.localProfile)
-        this._valid.next(true)
+    localStorage.setItem(STORAGE_KEY.ACCESS_TOKEN,  await this.accessToken  .first().toPromise())
+    localStorage.setItem(STORAGE_KEY.ID_TOKEN,      await this.idToken      .first().toPromise())
+    localStorage.setItem(STORAGE_KEY.REFRESH_TOKEN, await this.refreshToken .first().toPromise())
 
-      } else {
-        this.log.silly('Auth', 'init() idToken(length:%s) & profile(%s) not ready',
-                                this.idToken && this.idToken.length,
-                                this.snapshot.profile,
-                      )
-        this.log.silly('Auth', 'init() idToken: %s', this.idToken)
+    const profile = await this.profile      .first().toPromise()
+    localStorage.setItem(STORAGE_KEY.USER_PROFILE, JSON.stringify(profile))
+  }
 
-        this._profile.next({} as Auth0UserProfile)
-        this._valid.next(false)
+  public async logout(): Promise<void> {
+    this.log.verbose('Auth', 'remove()')
 
-      }
+    // Unschedule the token refresh
+    this.unscheduleRefresh()
+    this.unscheduleExpire()
 
-    } catch (e) {
-      this.log.error('Auth', 'init() exception: %s', e.message)
-      return
-    }
+    // Remove token from localStorage
+    localStorage.removeItem(STORAGE_KEY.ACCESS_TOKEN)
+    localStorage.removeItem(STORAGE_KEY.ID_TOKEN)
+    localStorage.removeItem(STORAGE_KEY.REFRESH_TOKEN)
+    localStorage.removeItem(STORAGE_KEY.USER_PROFILE)
 
+    this.accessToken$ .next('')
+    this.idToken$     .next('')
+    this.refreshToken$.next('')
+    this.profile$     .next({} as any)
+    this.valid$       .next(false)
   }
 
   /**
@@ -203,13 +246,13 @@ export class Auth {
     // Rxjs.Observable.fromEvent(auth0Lock, 'authorization_error')
     auth0Lock.on('unrecoverable_error', error => {
       this.log.warn('Auth', 'login() on(unrecoverable_error) error:%s', error)
-      this._valid.error(error)
+      this.valid$.error(error)
       auth0Lock.hide()
     })
 
     auth0Lock.on('authorization_error', error => {
       this.log.verbose('Auth', 'login() on(authorization_error)')
-      this._valid.error(error)
+      this.valid$.error(error)
     })
 
     // Add callback for lock `authenticated` event
@@ -219,16 +262,16 @@ export class Auth {
                                 Object.keys(authResult).join(','),
                       )
 
-      this.accessToken  = authResult.accessToken
-      this.idToken      = authResult.idToken
+      this.accessToken$ .next(authResult.accessToken)
+      this.idToken$     .next(authResult.idToken)
 
-      if (!this.idToken) {
+      if (!authResult.idToken) {
         this.log.error('Auth', 'login() Auth0Lock.on(authenticated) no idToken')
         return
       }
 
       const profile = await this.getProfile()
-      this._profile.next(profile)
+      this.profile$.next(profile)
 
       // auth0Lock.getProfile(this.idToken, (error, profile) => {
       //   if (error) {
@@ -245,7 +288,7 @@ export class Auth {
       this.scheduleRefresh()
       auth0Lock.hide()
       this.log.verbose('Auth', 'getAuth0Lock() Auth0Lock.on(authenticated) _valid.next(true)')
-      this._valid.next(true)
+      this.valid$.next(true)
     })
 
     return auth0Lock
@@ -254,8 +297,11 @@ export class Auth {
   public async getProfile(): Promise<Auth0UserProfile> {
     this.log.verbose('Auth', 'getProfile()')
 
-    return new Promise<Auth0UserProfile>((resolve, reject) => {
-      if (!this.idToken || !this.accessToken) {
+    return new Promise<Auth0UserProfile>(async (resolve, reject) => {
+      const idToken     = await this.idToken.first().toPromise()
+      const accessToken = await this.accessToken.first().toPromise()
+
+      if (!idToken || !accessToken) {
         const e = new Error('no id/access token')
         this.log.error('Auth', 'getProfile() %s', e.message)
         return reject(e)
@@ -265,7 +311,8 @@ export class Auth {
       // this.getManagement().getUser(userId, (error, profile) => {
       // auth0Lock.getProfile(this.idToken, (error, profile) => {
       // auth0Lock.getUserInfo(this.accessToken, (error, profile) => {
-      this.getWebAuth().client.userInfo(this.accessToken, (error, profile) => {
+
+      this.getWebAuth().client.userInfo(accessToken, (error, profile) => {
         this.log.verbose('Auth', 'getProfile() WebAuth.client.userInfo()')
 
         if (error) {
@@ -343,43 +390,28 @@ getProfile(idToken: string): Observable<any>{
     auth0Lock.show()
   }
 
-  public logout(): void {
-    this.log.verbose('Auth', 'logout()')
+  // public authenticated(): boolean {
+  //   // Check if there's an unexpired JWT
+  //   // It searches for an item in localStorage with key == 'id_token'
+  //   const invalid = !this.idToken || this.jwtHelper.isTokenExpired(this.idToken)
+  //   this.log.verbose('Auth', 'authenticated(): %s', !invalid)
 
-    // Unschedule the token refresh
-    this.unscheduleRefresh()
-    this.unscheduleExpire()
-    this.remove()
+  //   return !invalid
+  // }
 
-    this._profile.next({} as Auth0UserProfile)
-    this._valid.next(false)
-
-    this.log.verbose('Auth', 'logout() _valid.next(false)')
-    this._valid.next(false)
-  }
-
-  public authenticated(): boolean {
-    // Check if there's an unexpired JWT
-    // It searches for an item in localStorage with key == 'id_token'
-    const invalid = !this.idToken || this.jwtHelper.isTokenExpired(this.idToken)
-    this.log.verbose('Auth', 'authenticated(): %s', !invalid)
-
-    return !invalid
-  }
-
-  private scheduleExpire(idToken: string|null): void {
+  private scheduleExpire(idToken?: string): void {
     this.log.verbose('Auth', 'scheduleExpire()')
 
     if (this.expireTimer) {
-      clearTimeout(this.expireTimer)
       this.log.silly('Auth', 'scheduleExpire() clearTimeout()')
-      this.expireTimer = null
+      clearTimeout(this.expireTimer)
+      this.expireTimer = undefined
     }
 
     if (!idToken) {
       this.log.verbose('Auth', 'scheduleExpire() no idToken')
-      this.log.verbose('Auth', 'scheduleExpire() _valid.next(false)')
-      this._valid.next(false)
+      this.log.verbose('Auth', 'scheduleExpire() valid$.next(false)')
+      this.valid$.next(false)
       return
     }
 
@@ -394,7 +426,7 @@ getProfile(idToken: string): Observable<any>{
 
       this.expireTimer = setTimeout(() => {
         this.log.verbose('Auth', 'scheduleExpire() _valid.next(false)')
-        this._valid.next(false)
+        this.valid$.next(false)
       }, timeout)
       this.log.silly('Auth', 'scheduleExpire() setTimeout(,%s) = %s hours',
                               timeout,
@@ -405,17 +437,19 @@ getProfile(idToken: string): Observable<any>{
     }
   }
 
-  public scheduleRefresh() {
+  public async scheduleRefresh(): Promise<void> {
     this.log.verbose('Auth', 'scheduleRefresh()')
 
     // If the user is authenticated, use the token stream
     // provided by angular2-jwt and flatMap the token
 
-    if (!this.idToken) {
-      this.log.error('Auth', 'scheduleRefresh() error: no this.idToken')
+    const idToken = await this.idToken.first().toPromise()
+
+    if (!idToken) {
+      this.log.error('Auth', 'scheduleRefresh() error: no idToken')
       return
     }
-    const source = Observable.of(this.idToken).flatMap(token => {
+    const source = Observable.of(idToken).flatMap(token => {
       if (!token) {
         const e = new Error('scheduleRefresh() failed to get token')
         this.log.error('Auth', e.message)
@@ -445,8 +479,13 @@ getProfile(idToken: string): Observable<any>{
   public async startupTokenRefresh() {
     this.log.verbose('Auth', 'startupTokenRefresh()')
 
+    const valid = await this.valid.first().toPromise()
+
     // http://stackoverflow.com/a/34190965/1123955
-    if (this.snapshot.valid) {
+    if (valid) {
+
+      // FIXME: uncomment the code below
+
       // If the user is authenticated, use the token stream
       // provided by angular2-jwt and flatMap the token
       // const source = this.authHttp.tokenStream.flatMap(
@@ -494,7 +533,7 @@ getProfile(idToken: string): Observable<any>{
     if (this.expireTimer) {
       clearTimeout(this.expireTimer)
       this.log.silly('Auth', 'unscheduleExpire() clearTimeout()')
-      this.expireTimer = null
+      this.expireTimer = undefined
     }
   }
 
@@ -525,9 +564,9 @@ getProfile(idToken: string): Observable<any>{
           this.log.error('Auth', 'getNewJwt() WebAuth.renewAuth() error: %s', err)
           return
         }
-        this.accessToken  = authResult.accessToken
-        this.idToken      = authResult.idToken
-        this.refreshToken = authResult.refreshToken
+        this.accessToken$ .next(authResult.accessToken)
+        this.idToken$     .next(authResult.idToken)
+        this.refreshToken$.next(authResult.refreshToken)
 
         this.save()
 
@@ -535,52 +574,6 @@ getProfile(idToken: string): Observable<any>{
     } catch (e) {
       this.log.error('Auth', 'getNewJwt() error: %s', e.message)
     }
-  }
-
-  public async save(): Promise<void> {
-    this.log.verbose('Auth', 'save()')
-
-    await this.storage.ready()
-
-    this.storage.set(STORAGE_KEY.ACCESS_TOKEN,  this.accessToken)
-    this.storage.set(STORAGE_KEY.ID_TOKEN,      this.idToken)
-    this.storage.set(STORAGE_KEY.REFRESH_TOKEN, this.refreshToken)
-
-    this.storage.set(STORAGE_KEY.USER_PROFILE,  this.snapshot.profile)
-  }
-
-  public async remove(): Promise<void> {
-    this.log.verbose('Auth', 'remove()')
-
-    await this.storage.ready()
-
-    // Remove token from localStorage
-    this.storage.remove(STORAGE_KEY.ACCESS_TOKEN)
-    this.storage.remove(STORAGE_KEY.ID_TOKEN)
-    this.storage.remove(STORAGE_KEY.REFRESH_TOKEN)
-
-    this.storage.remove(STORAGE_KEY.USER_PROFILE)
-
-    this.accessToken  = null
-    this.idToken      = null
-    this.refreshToken = null
-  }
-
-  public async load(): Promise<void> {
-    this.log.verbose('Auth', 'load()')
-
-    await this.storage.ready()
-    this.log.silly('Auth', 'load() Storage.ready() done')
-
-    this.accessToken  = await this.storage.get(STORAGE_KEY.ACCESS_TOKEN)
-    this.idToken      = await this.storage.get(STORAGE_KEY.ID_TOKEN)
-    this.refreshToken = await this.storage.get(STORAGE_KEY.REFRESH_TOKEN)
-
-    this.localProfile = await this.storage.get(STORAGE_KEY.USER_PROFILE)
-
-    this.log.silly('Auth', 'load() Storage.get() all done. profile={email:%s,...}',
-                            this.localProfile && this.localProfile.email,
-                  )
   }
 
 }
