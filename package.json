@@ -1,6 +1,6 @@
 {
   "name": "auth-angular",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Authing Service/Provider for Angular",
   "main": "index.js",
   "scripts": {
