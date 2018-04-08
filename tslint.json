@@ -1,6 +1,5 @@
 {
   "rulesDirectory": [
-    "node_modules/tslint-jsdoc-rules/lib"
   ],
   "rules": {
     "align": [

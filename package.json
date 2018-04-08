@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "ionic-app-scripts clean",
     "lint": "npm run lint:ts",
-    "lint:ts": "tslint --project tsconfig.json \"{src,tests}/**/*.ts\" && tsc --noEmit",
+    "lint:ts": "tslint --project tsconfig.json && tsc --noEmit",
     "test": "echo test"
   },
   "repository": {
