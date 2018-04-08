@@ -142,7 +142,7 @@ export class Auth {
     // this.init()
   }
 
-  private async init() {
+  public async init() {
     this.log.verbose('Auth', 'init()')
 
     this.idToken.subscribe(token => {
