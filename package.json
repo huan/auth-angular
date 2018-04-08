@@ -4,6 +4,9 @@
   "description": "Authing Service/Provider for Angular",
   "main": "index.js",
   "scripts": {
+    "clean": "ionic-app-scripts clean",
+    "lint": "npm run lint:ts",
+    "lint:ts": "tslint --project tsconfig.json \"{src,tests}/**/*.ts\" && tsc --noEmit",
     "test": "echo test"
   },
   "repository": {
