@@ -7,8 +7,8 @@ The Authing Service/Provider for Angular
 
 # FEATURES
 
-1. Auth0 compatible.
-1. Authing compatible.
+1. [Auth0](https://auth0.com/) compatible.
+1. [Authing](https://authing.cn/) compatible.
 1. RxJS Observable as the first class pattern.
 1. Out-Of-Box support for Angular Dependence Injection.
 
@@ -23,3 +23,17 @@ The Authing Service/Provider for Angular
 * [Server + API Architecture Scenario](https://auth0.com/docs/architecture-scenarios/application/server-api)
 * [Verify Access Tokens](https://auth0.com/docs/api-auth/tutorials/verify-access-token)
 * [Auth0 + Scaphold](https://scaphold.io/community/questions/scaphold-social-login/)
+
+# AUTHOR
+
+[Huan LI](http://linkedin.com/in/zixia) \<zixia@zixia.net\>
+
+<a href="https://stackexchange.com/users/265499">
+  <img src="https://stackexchange.com/users/flair/265499.png" width="208" height="58" alt="profile for zixia on Stack Exchange, a network of free, community-driven Q&amp;A sites" title="profile for zixia on Stack Exchange, a network of free, community-driven Q&amp;A sites">
+</a>
+
+# COPYRIGHT & LICENSE
+
+* Code & Docs © 2018 Huan LI \<zixia@zixia.net\>
+* Code released under the Apache-2.0 License
+* Docs released under Creative Commons

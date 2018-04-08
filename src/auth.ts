@@ -42,7 +42,7 @@ const AUTH0 = {
   DOMAIN:     'zixia.auth0.com',
 }
 
-interface AuthSnapshot {
+export interface AuthSnapshot {
   valid:    boolean,
   profile:  Auth0UserProfile,
 }
