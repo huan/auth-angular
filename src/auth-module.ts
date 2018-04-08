@@ -1,11 +1,14 @@
 import {
+  ModuleWithProviders,
   NgModule,
 }                       from '@angular/core'
 import {
   JWT_OPTIONS,
+  JwtHelperService,
   JwtModule,
   JwtModuleOptions,
 }                       from '@auth0/angular-jwt'
+import { Brolog }       from 'brolog'
 
 import { Auth } from './auth'
 
@@ -28,6 +31,14 @@ export function jwtOptionsFactory() {
   return jwtOptions.config
 }
 
+function authFactory(
+  log:              Brolog,
+  jwtHelperService: JwtHelperService,
+) {
+  const auth = new Auth(log, jwtHelperService)
+  return auth
+}
+
 @NgModule({
   id: 'auth-angular',
   imports: [
@@ -39,9 +50,21 @@ export function jwtOptionsFactory() {
       },
     }),
   ],
-  providers: [
-    Auth,
-  ],
 })
 export class AuthModule {
+  public static forRoot(): ModuleWithProviders {
+    return {
+      ngModule: AuthModule,
+      providers: [
+        {
+          provide:    Auth,
+          useFactory: authFactory,
+          deps: [
+            Brolog,
+            JwtHelperService,
+          ],
+        },
+      ],
+    }
+  }
 }
