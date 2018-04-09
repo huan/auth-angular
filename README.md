@@ -1,4 +1,9 @@
 # AUTH-ANGULAR
+
+[![Build](https://img.shields.io/travis/zixia/auth-angular.svg?label=Test)](https://travis-ci.org/zixia/auth-angular)
+[![NPM Version](https://badge.fury.io/js/auth-angular.svg)](https://www.npmjs.com/package/auth-angular)
+[![Greenkeeper badge](https://badges.greenkeeper.io/Chatie/wechaty.svg)](https://greenkeeper.io/)
+
 The Authing Service/Provider for Angular
 
 ![Auth Angular Logo](https://zixia.github.io/auth-angular/images/auth-angular-logo.png)
