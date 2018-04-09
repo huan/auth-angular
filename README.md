@@ -1,6 +1,6 @@
 # AUTH-ANGULAR
 
-[![Build](https://img.shields.io/travis/zixia/auth-angular.svg?label=Test)](https://travis-ci.org/zixia/auth-angular)
+[![Build Status](https://travis-ci.org/zixia/auth-angular.svg?branch=master)](https://travis-ci.org/zixia/auth-angular)
 [![NPM Version](https://badge.fury.io/js/auth-angular.svg)](https://www.npmjs.com/package/auth-angular)
 [![Greenkeeper badge](https://badges.greenkeeper.io/Chatie/wechaty.svg)](https://greenkeeper.io/)
 
@@ -8,6 +8,8 @@ The Authing Service/Provider for Angular
 
 ![Auth Angular Logo](https://zixia.github.io/auth-angular/images/auth-angular-logo.png)
 > Picture Credit: [Angular 5 Authentication](https://www.genuitec.com/angular-5-authentication/)
+
+![Angular NgModule](https://zixia.github.io/auth-angular/images/ngmodule-logo.png)
 
 # WIP: WORKING IN PROGRESS
 
