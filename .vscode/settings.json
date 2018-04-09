@@ -6,6 +6,9 @@
   "editor.minimap.enabled": true,
   "files.exclude": {
       ".sourcemaps/": true
+    , ".ng_pkg_build/": true
+    , "dist/": true
+    , "dist.tgz": true
     , "node_modules/": true
     , "www/": true
     , "platforms/": true

@@ -64,6 +64,7 @@ export class AuthModule {
       jwtHelperService: JwtHelperService,
     ): Auth {
       const auth = new Auth(log, jwtHelperService)
+      auth.init()
       return auth
     }
 

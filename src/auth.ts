@@ -16,10 +16,10 @@ import {
   BehaviorSubject,
   Observable,
   Subscription,
-}                   from 'rxjs/Rx'
-import {
-  // map,
-}                   from 'rxjs/operators'
+}                       from 'rxjs/Rx'
+// import {
+//   distinctUntilChanged,
+// }                       from 'rxjs/operators'
 
 const STORAGE_KEY = {
   ACCESS_TOKEN:   'access_token',
@@ -54,6 +54,9 @@ export class Auth {
   private         profile$:     BehaviorSubject <Auth0UserProfile>
   public readonly profile:      Observable      <Auth0UserProfile>
 
+  private         valid$:       BehaviorSubject <boolean>
+  public readonly valid:        Observable      <boolean>
+
   private accessToken$:         BehaviorSubject <string>
   public readonly accessToken:  Observable      <string>
 
@@ -82,13 +85,6 @@ export class Auth {
   ) {
     this.log.verbose('Auth', 'constructor()')
 
-    // this.snapshot     = {
-    //   valid: false,
-    //   profile: {},
-    // } as AuthSnapshot
-
-    // this.localProfile = {} as Auth0UserProfile
-
     /**
      * Init BehaviorSubjects
      */
@@ -97,22 +93,17 @@ export class Auth {
     this.refreshToken$  = new BehaviorSubject<string>('')
 
     this.profile$ = new BehaviorSubject<Auth0UserProfile>({} as Auth0UserProfile)
-    // this.valid$   = new BehaviorSubject<boolean>(false)
+    this.valid$   = new BehaviorSubject<boolean>(false)
 
     /**
      * Init asObservables
      */
-    this.accessToken  = this.accessToken$ .asObservable().share().distinctUntilChanged()
-    this.idToken      = this.idToken$     .asObservable().share().distinctUntilChanged()
-    this.refreshToken = this.refreshToken$.asObservable().share().distinctUntilChanged()
+    this.accessToken  = this.accessToken$ .asObservable().distinctUntilChanged()
+    this.idToken      = this.idToken$     .asObservable().distinctUntilChanged()
+    this.refreshToken = this.refreshToken$.asObservable().distinctUntilChanged()
 
-    // this.valid    = this.valid$.asObservable()  .share().distinctUntilChanged()
-    this.profile  = this.profile$.asObservable().share().distinctUntilChanged()
-
-    // /**
-    //  * Init
-    //  */
-    // this.init()
+    this.valid    = this.valid$.asObservable()  .distinctUntilChanged()
+    this.profile  = this.profile$.asObservable().distinctUntilChanged()
   }
 
   public async init() {
@@ -120,9 +111,15 @@ export class Auth {
 
     this.idToken.subscribe(token => {
       if (token) {
+        // TODO: check if the token is valid
+        // jwtHelper???
+        this.valid$.next(true)
+
         this.scheduleRefresh(token)
         this.scheduleExpire(token)
       } else {
+        this.valid$.next(false)
+
         this.unscheduleRefresh()
         this.unscheduleExpire()
       }
@@ -397,7 +394,7 @@ getProfile(idToken: string): Observable<any>{
 
     if (!idToken) {
       this.log.error('Auth', 'scheduleExpire() no idToken')
-      this.idToken$.error(new Error('scheduleExpire() no idToken'))
+      this.valid$.error(new Error('scheduleExpire() no idToken'))
       return
     }
 
@@ -436,7 +433,7 @@ getProfile(idToken: string): Observable<any>{
 
     if (!idToken) {
       this.log.error('Auth', 'scheduleRefresh() error: no idToken')
-      this.idToken$.error(new Error('scheduleRefresh() no idToken'))
+      this.valid$.error(new Error('scheduleRefresh() no idToken'))
       return
     }
 
