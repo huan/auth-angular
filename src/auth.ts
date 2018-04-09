@@ -17,21 +17,9 @@ import {
   Observable,
   Subscription,
 }                       from 'rxjs/Rx'
-// import {
-//   distinctUntilChanged,
-// }                       from 'rxjs/operators'
-
-const STORAGE_KEY = {
-  ACCESS_TOKEN:   'access_token',
-  ID_TOKEN:       'id_token',
-  USER_PROFILE:   'user_profile',
-  /**
-   * OIDC-conformant refresh tokens: https://auth0.com/docs/api-auth/tutorials/adoption/refresh-tokens
-   * Silent Authentication: https://auth0.com/docs/api-auth/tutorials/silent-authentication
-   */
-  REFRESH_TOKEN:  'refresh_token',
-}
-
+import {
+  STORAGE_KEY,
+}                 from './config'
 /**
  * Auth0 API Configuration
  */
@@ -113,11 +101,14 @@ export class Auth {
       if (token) {
         // TODO: check if the token is valid
         // jwtHelper???
+
+        this.log.verbose('Auth', 'init() this.idToken.subscribe() this.valid$.next(true)')
         this.valid$.next(true)
 
         this.scheduleRefresh(token)
         this.scheduleExpire(token)
       } else {
+        this.log.verbose('Auth', 'init() this.idToken.subscribe() this.valid$.next(false)')
         this.valid$.next(false)
 
         this.unscheduleRefresh()
@@ -152,7 +143,7 @@ export class Auth {
     // this.valid$.next(true)
 
     this.log.silly('Auth', 'load() idToken=%s, profile=%s',
-                            idToken,
+                            idToken || '""',
                             JSON.stringify(profile),
                   )
   }
@@ -277,7 +268,7 @@ export class Auth {
 
       await this.save()
       auth0Lock.hide()
-      this.log.verbose('Auth', 'getAuth0Lock() Auth0Lock.on(authenticated) _valid.next(true)')
+      // this.log.verbose('Auth', 'getAuth0Lock() Auth0Lock.on(authenticated) _valid.next(true)')
       // this.valid$.next(true)
     })
 

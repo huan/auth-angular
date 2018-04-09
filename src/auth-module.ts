@@ -1,7 +1,9 @@
 import {
   ModuleWithProviders,
   NgModule,
-}                       from '@angular/core'
+}                           from '@angular/core'
+import { HttpClientModule } from '@angular/common/http'
+
 import {
   JWT_OPTIONS,
   JwtHelperService,
@@ -10,13 +12,14 @@ import {
 }                       from '@auth0/angular-jwt'
 import { Brolog }       from 'brolog'
 
-import { Auth } from './auth'
+import { Auth }         from './auth'
+import { STORAGE_KEY }  from './config'
 
 export function jwtOptionsFactory() {
   const jwtOptions: JwtModuleOptions = {
     config: {
       tokenGetter: () => {
-        return localStorage.getItem('access_token') || ''
+        return localStorage.getItem(STORAGE_KEY.ACCESS_TOKEN) || ''
       },
       whitelistedDomains: [
         'localhost:3001',
@@ -34,6 +37,7 @@ export function jwtOptionsFactory() {
 @NgModule({
   id: 'auth-angular',
   imports: [
+    HttpClientModule,
     JwtModule.forRoot({
       jwtOptionsProvider: {
         provide:    JWT_OPTIONS,
