@@ -32,6 +32,17 @@ The Authing Service/Provider for Angular
 * [Verify Access Tokens](https://auth0.com/docs/api-auth/tutorials/verify-access-token)
 * [Auth0 + Scaphold](https://scaphold.io/community/questions/scaphold-social-login/)
 
+# CHANGELOG
+
+## v0.1 Apr 9, 2018
+
+CI by Travis & CD to NPM
+
+## v0.0 Apr 8, 2018
+
+Promote this module as a SOLO NPM module from @chatie/app
+
+
 # AUTHOR
 
 [Huan LI](http://linkedin.com/in/zixia) \<zixia@zixia.net\>
