@@ -36,12 +36,13 @@ The Authing Service/Provider for Angular
 
 ## v0.1 Apr 9, 2018
 
-CI by Travis & CD to NPM
+1. CI by Travis & CD to NPM
 
 ## v0.0 Apr 8, 2018
 
-Promote this module as a SOLO NPM module from @chatie/app
-
+1. Promote this module as a SOLO NPM module [auth-angular](https://www.npmjs.com/package/auth-angular) from [@chatie/app](https://github.com/Chatie/app)
+1. Clean Auth0 Code
+1. Clean RxJS Code
 
 # AUTHOR
 

@@ -8,7 +8,8 @@
     "lint": "npm run lint:ts",
     "lint:ts": "tslint --project tsconfig.json && tsc --noEmit",
     "ng:packagr": "ng-packagr -p package.json",
-    "test": "echo test"
+    "test": "npm run lint && echo test",
+    "test:pack": "echo packing test TBW"
   },
   "repository": {
     "type": "git",
