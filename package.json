@@ -2,7 +2,6 @@
   "name": "auth-angular",
   "version": "0.1.6",
   "description": "Authing Service/Provider for Angular",
-  "main": "index.ts",
   "scripts": {
     "clean": "shx rm -fr dist",
     "lint": "npm run lint:ts",
@@ -66,7 +65,7 @@
   },
   "ngPackage": {
     "lib": {
-      "entryFile": "index.ts"
+      "entryFile": "public_api.ts"
     },
     "whitelistedNonPeerDependencies": [
       "@auth0/angular-jwt",
