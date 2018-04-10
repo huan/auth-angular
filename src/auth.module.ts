@@ -37,6 +37,15 @@ export function jwtOptionsFactory() {
   return jwtOptions.config
 }
 
+export function authFactory(
+  log:              Brolog,
+  jwtHelperService: JwtHelperService,
+): Auth {
+  const auth = new Auth(log, jwtHelperService)
+  auth.init()
+  return auth
+}
+
 @NgModule({
   id: 'auth-angular',
   imports: [
@@ -65,15 +74,5 @@ export class AuthModule {
         },
       ],
     }
-
-    function authFactory(
-      log:              Brolog,
-      jwtHelperService: JwtHelperService,
-    ): Auth {
-      const auth = new Auth(log, jwtHelperService)
-      auth.init()
-      return auth
-    }
-
   }
 }
