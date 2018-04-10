@@ -2,7 +2,6 @@
   "name": "auth-angular",
   "version": "0.1.4",
   "description": "Authing Service/Provider for Angular",
-  "main": "index.js",
   "scripts": {
     "clean": "shx rm -fr dist",
     "lint": "npm run lint:ts",
