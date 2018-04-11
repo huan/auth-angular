@@ -98,6 +98,8 @@ export class Auth {
     this.log.verbose('Auth', 'init()')
 
     this.idToken.subscribe(token => {
+      this.log.verbose('Auth', 'init() this.idToken.subscribe(token=%s)', token)
+
       if (token) {
         // TODO: check if the token is valid
         // jwtHelper???
@@ -134,15 +136,18 @@ export class Auth {
     ) as Auth0UserProfile
 
     // TODO: validate id_token
+    if (!idToken) {
+      this.log.silly('Auth', 'load() N/A.')
+      return
+    }
 
     this.accessToken$ .next(accessToken)
     this.idToken$     .next(idToken)
     this.refreshToken$.next(refreshToken)
 
     this.profile$.next(profile)
-    // this.valid$.next(true)
 
-    this.log.silly('Auth', 'load() idToken=%s, profile=%s',
+    this.log.silly('Auth', 'load()-ed idToken=%s, profile=%s',
                             idToken || '""',
                             JSON.stringify(profile),
                   )
@@ -381,7 +386,7 @@ getProfile(idToken: string): Observable<any>{
   // }
 
   private scheduleExpire(idToken: string): void {
-    this.log.verbose('Auth', 'scheduleExpire(idToken=%s)', idToken)
+    this.log.verbose('Auth', 'scheduleExpire()')
 
     if (!idToken) {
       this.log.error('Auth', 'scheduleExpire() no idToken')
@@ -418,9 +423,7 @@ getProfile(idToken: string): Observable<any>{
   }
 
   public async scheduleRefresh(idToken: string): Promise<void> {
-    this.log.verbose('Auth', 'scheduleRefresh(idToken=%s)', idToken)
-
-    // const idToken = await this.idToken.first().toPromise()
+    this.log.verbose('Auth', 'scheduleRefresh()')
 
     if (!idToken) {
       this.log.error('Auth', 'scheduleRefresh() error: no idToken')
@@ -437,8 +440,8 @@ getProfile(idToken: string): Observable<any>{
         throw e
       }
 
-      const decodedToken = this.jwtHelper.decodeToken(token)
-      this.log.verbose('Auth', 'scheduleRefresh() for token {email:%s,...}', decodedToken.email)
+      // const decodedToken = this.jwtHelper.decodeToken(token)
+      // this.log.verbose('Auth', 'scheduleRefresh() for token {email:%s,...}', decodedToken.email)
 
       // The delay to generate in this case is the difference
       // between the expiry time and the issued at time
@@ -465,6 +468,7 @@ getProfile(idToken: string): Observable<any>{
     // http://stackoverflow.com/a/34190965/1123955
     if (idToken) {
 
+      // TODO: implement refresh function
       // FIXME: uncomment the code below
 
       // If the user is authenticated, use the token stream
