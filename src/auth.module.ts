@@ -15,26 +15,18 @@ import { Brolog }       from 'brolog'
 import { Auth }         from './auth'
 import { STORAGE_KEY }  from './config'
 
-export function tokenGetter() {
-  return localStorage.getItem(STORAGE_KEY.ACCESS_TOKEN) || ''
-}
-
-export function jwtOptionsFactory() {
-  const jwtOptions: JwtModuleOptions = {
-    config: {
-      // https://github.com/matheushf/ng2-date-countdown/issues/6#issuecomment-364641790
-      tokenGetter: tokenGetter,
-      whitelistedDomains: [
-        'localhost:3001',
-        'chatie.io',
-      ],
-      blacklistedRoutes: ['localhost:3001/auth/'],
-      throwNoTokenError: false,
-      skipWhenExpired: true,
-    },
+export function jwtOptionsFactory(): JwtModuleOptions['config'] {
+  return {
+    // https://github.com/matheushf/ng2-date-countdown/issues/6#issuecomment-364641790
+    tokenGetter: () => localStorage.getItem(STORAGE_KEY.ACCESS_TOKEN) || '',
+    whitelistedDomains: [
+      'localhost:3001',
+      'chatie.io',
+    ],
+    blacklistedRoutes: ['localhost:3001/auth/'],
+    throwNoTokenError: false,
+    skipWhenExpired: true,
   }
-
-  return jwtOptions.config
 }
 
 export function authFactory(
