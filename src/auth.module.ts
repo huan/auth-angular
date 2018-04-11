@@ -17,17 +17,18 @@ import { STORAGE_KEY }  from './config'
 
 export function jwtOptionsFactory(): JwtModuleOptions['config'] {
   return {
-    // https://github.com/matheushf/ng2-date-countdown/issues/6#issuecomment-364641790
     tokenGetter,
     whitelistedDomains: [
-      'localhost:3001',
+      'localhost',
       'chatie.io',
     ],
-    blacklistedRoutes: ['localhost:3001/auth/'],
+    blacklistedRoutes: [
+    ],
     throwNoTokenError: false,
     skipWhenExpired: true,
   }
 
+  // https://github.com/matheushf/ng2-date-countdown/issues/6#issuecomment-364641790
   function tokenGetter() {
     return localStorage.getItem(STORAGE_KEY.ACCESS_TOKEN) || ''
   }

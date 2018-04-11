@@ -11,16 +11,16 @@ The Authing Service/Provider for Angular
 
 ![Angular NgModule](https://zixia.github.io/auth-angular/images/ngmodule-logo.png)
 
-# WIP: WORKING IN PROGRESS
-
-**Please come back after 4 weeks.**
-
 # FEATURES
 
 1. [Auth0](https://auth0.com/) compatible.
 1. [Authing](https://authing.cn/) compatible.
 1. RxJS Observable as the first class pattern.
 1. Out-Of-Box support for Angular Dependence Injection.
+
+# TODO
+
+- [ ] Make all parameter to Auth0 as the options of AuthModule.forRoot(options)
 
 # RESOURCES
 
@@ -31,13 +31,18 @@ The Authing Service/Provider for Angular
 
 ## Auth0
 
+* [Auth0 Lock v11 for Web](https://auth0.com/docs/libraries/lock/v11)
+* [Auth0 Playground](https://auth0.github.io/lock-passwordless/)
+
+## Ionic & Angular
+
 * [Auth0 Ionic2 Quick Start](https://auth0.com/docs/quickstart/native/ionic2)
 * [Ionic 2 and Auth0(outdated: v0.9)](http://blog.ionic.io/ionic-2-and-auth0/)
 * [Experimenting With Auth0 Passwordless Email Authentication In Angular 2.4.1](https://www.bennadel.com/blog/3207-experimenting-with-auth0-passwordless-email-authentication-in-angular-2-4-1.htm)
 * [OpenID Standard Claims](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims)
 * [Server + API Architecture Scenario](https://auth0.com/docs/architecture-scenarios/application/server-api)
 * [Verify Access Tokens](https://auth0.com/docs/api-auth/tutorials/verify-access-token)
-* [Auth0 + Scaphold](https://scaphold.io/community/questions/scaphold-social-login/)
+* ~~[Auth0 + Scaphold](https://scaphold.io/community/questions/scaphold-social-login/)~~
 
 # CHANGELOG
 
