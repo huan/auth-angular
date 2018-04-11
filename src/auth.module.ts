@@ -18,7 +18,7 @@ import { STORAGE_KEY }  from './config'
 export function jwtOptionsFactory(): JwtModuleOptions['config'] {
   return {
     // https://github.com/matheushf/ng2-date-countdown/issues/6#issuecomment-364641790
-    tokenGetter: () => localStorage.getItem(STORAGE_KEY.ACCESS_TOKEN) || '',
+    tokenGetter,
     whitelistedDomains: [
       'localhost:3001',
       'chatie.io',
@@ -26,6 +26,10 @@ export function jwtOptionsFactory(): JwtModuleOptions['config'] {
     blacklistedRoutes: ['localhost:3001/auth/'],
     throwNoTokenError: false,
     skipWhenExpired: true,
+  }
+
+  function tokenGetter() {
+    return localStorage.getItem(STORAGE_KEY.ACCESS_TOKEN) || ''
   }
 }
 
