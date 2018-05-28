@@ -1,8 +1,7 @@
 {
   "name": "auth-angular",
-  "version": "0.1.3",
+  "version": "0.4.2",
   "description": "Authing Service/Provider for Angular",
-  "main": "index.js",
   "scripts": {
     "clean": "shx rm -fr dist",
     "lint": "npm run lint:ts",
@@ -29,49 +28,51 @@
   },
   "homepage": "https://github.com/zixia/auth-angular#readme",
   "devDependencies": {
-    "@angular/common": "^5.2.9",
-    "@angular/compiler": "^5.2.9",
-    "@angular/compiler-cli": "^5.2.9",
-    "@angular/core": "^5.2.9",
-    "@auth0/angular-jwt": "^1.1.0",
+    "@angular/common": "^6.0.0",
+    "@angular/compiler": "^6.0.0",
+    "@angular/compiler-cli": "^6.0.0",
+    "@angular/core": "^6.0.0",
+    "@auth0/angular-jwt": "^2.0.0",
     "@types/auth0-js": "^8.11.2",
     "@types/auth0-lock": "^11.4.0",
     "@types/blue-tape": "^0.1.31",
-    "@types/node": "^9.6.2",
+    "@types/node": "^10.0.3",
+    "@types/semver": "^5.5.0",
     "auth0-js": "^9.4.2",
     "auth0-lock": "^11.5.2",
     "blue-tape": "^1.0.0",
     "brolog": "^1.2.17",
     "git-scripts": "^0.2.1",
-    "ng-packagr": "^2.4.2",
-    "rxjs": "^5.5.8",
+    "ng-packagr": "^3.0.0",
+    "rxjs": "^6.1.0",
+    "semver": "^5.5.0",
     "shx": "^0.2.2",
+    "ts-node": "^6.0.3",
     "tslint": "^5.9.1",
-    "typescript": "^2.8.1"
+    "typescript": "2.7.*"
   },
   "peerDependencies": {
-    "@angular/core": "^5.2.9",
-    "brolog": "^1.2.17",
-    "rxjs": "^5.5.8"
-  },
-  "dependencies": {
-    "@auth0/angular-jwt": "^1.1.0",
+    "@angular/core": "^6.0.0",
+    "@auth0/angular-jwt": "^2.0.0",
     "auth0-js": "^9.4.2",
-    "auth0-lock": "^11.5.2"
+    "auth0-lock": "^11.5.2",
+    "brolog": "^1.2.17",
+    "rxjs": "^6.1.0"
   },
+  "dependencies": {},
   "git": {
     "scripts": {
       "pre-push": "./scripts/pre-push.sh"
     }
   },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
   "ngPackage": {
     "lib": {
-      "entryFile": "index.ts"
+      "entryFile": "public_api.ts"
     },
-    "whitelistedNonPeerDependencies": [
-      "@auth0/angular-jwt",
-      "auth0-js",
-      "auth0-lock"
-    ]
+    "whitelistedNonPeerDependencies": []
   }
 }

@@ -13,25 +13,20 @@ import {
 import Auth0Lock    from 'auth0-lock'
 import { Brolog }   from 'brolog'
 import {
+  interval,
+  of,
   BehaviorSubject,
   Observable,
   Subscription,
-}                       from 'rxjs/Rx'
-// import {
-//   distinctUntilChanged,
-// }                       from 'rxjs/operators'
-
-const STORAGE_KEY = {
-  ACCESS_TOKEN:   'access_token',
-  ID_TOKEN:       'id_token',
-  USER_PROFILE:   'user_profile',
-  /**
-   * OIDC-conformant refresh tokens: https://auth0.com/docs/api-auth/tutorials/adoption/refresh-tokens
-   * Silent Authentication: https://auth0.com/docs/api-auth/tutorials/silent-authentication
-   */
-  REFRESH_TOKEN:  'refresh_token',
-}
-
+}                       from 'rxjs'
+import {
+  distinctUntilChanged,
+  flatMap,
+  first,
+}                       from 'rxjs/operators'
+import {
+  STORAGE_KEY,
+}                 from './config'
 /**
  * Auth0 API Configuration
  */
@@ -98,26 +93,31 @@ export class Auth {
     /**
      * Init asObservables
      */
-    this.accessToken  = this.accessToken$ .asObservable().distinctUntilChanged()
-    this.idToken      = this.idToken$     .asObservable().distinctUntilChanged()
-    this.refreshToken = this.refreshToken$.asObservable().distinctUntilChanged()
+    this.accessToken  = this.accessToken$ .asObservable().pipe(distinctUntilChanged())
+    this.idToken      = this.idToken$     .asObservable().pipe(distinctUntilChanged())
+    this.refreshToken = this.refreshToken$.asObservable().pipe(distinctUntilChanged())
 
-    this.valid    = this.valid$.asObservable()  .distinctUntilChanged()
-    this.profile  = this.profile$.asObservable().distinctUntilChanged()
+    this.valid    = this.valid$.asObservable()  .pipe(distinctUntilChanged())
+    this.profile  = this.profile$.asObservable().pipe(distinctUntilChanged())
   }
 
   public async init() {
     this.log.verbose('Auth', 'init()')
 
     this.idToken.subscribe(token => {
+      this.log.verbose('Auth', 'init() this.idToken.subscribe(token=%s)', token)
+
       if (token) {
         // TODO: check if the token is valid
         // jwtHelper???
+
+        this.log.verbose('Auth', 'init() this.idToken.subscribe() this.valid$.next(true)')
         this.valid$.next(true)
 
         this.scheduleRefresh(token)
         this.scheduleExpire(token)
       } else {
+        this.log.verbose('Auth', 'init() this.idToken.subscribe() this.valid$.next(false)')
         this.valid$.next(false)
 
         this.unscheduleRefresh()
@@ -143,16 +143,19 @@ export class Auth {
     ) as Auth0UserProfile
 
     // TODO: validate id_token
+    if (!idToken) {
+      this.log.silly('Auth', 'load() N/A.')
+      return
+    }
 
     this.accessToken$ .next(accessToken)
     this.idToken$     .next(idToken)
     this.refreshToken$.next(refreshToken)
 
     this.profile$.next(profile)
-    // this.valid$.next(true)
 
-    this.log.silly('Auth', 'load() idToken=%s, profile=%s',
-                            idToken,
+    this.log.silly('Auth', 'load()-ed idToken=%s, profile=%s',
+                            idToken || '""',
                             JSON.stringify(profile),
                   )
   }
@@ -160,11 +163,11 @@ export class Auth {
   public async save(): Promise<void> {
     this.log.verbose('Auth', 'save()')
 
-    localStorage.setItem(STORAGE_KEY.ACCESS_TOKEN,  await this.accessToken  .first().toPromise())
-    localStorage.setItem(STORAGE_KEY.ID_TOKEN,      await this.idToken      .first().toPromise())
-    localStorage.setItem(STORAGE_KEY.REFRESH_TOKEN, await this.refreshToken .first().toPromise())
+    localStorage.setItem(STORAGE_KEY.ACCESS_TOKEN,  await this.accessToken  .pipe(first()).toPromise())
+    localStorage.setItem(STORAGE_KEY.ID_TOKEN,      await this.idToken      .pipe(first()).toPromise())
+    localStorage.setItem(STORAGE_KEY.REFRESH_TOKEN, await this.refreshToken .pipe(first()).toPromise())
 
-    const profile = await this.profile      .first().toPromise()
+    const profile = await this.profile.pipe(first()).toPromise()
     localStorage.setItem(STORAGE_KEY.USER_PROFILE, JSON.stringify(profile))
   }
 
@@ -277,7 +280,7 @@ export class Auth {
 
       await this.save()
       auth0Lock.hide()
-      this.log.verbose('Auth', 'getAuth0Lock() Auth0Lock.on(authenticated) _valid.next(true)')
+      // this.log.verbose('Auth', 'getAuth0Lock() Auth0Lock.on(authenticated) _valid.next(true)')
       // this.valid$.next(true)
     })
 
@@ -390,7 +393,7 @@ getProfile(idToken: string): Observable<any>{
   // }
 
   private scheduleExpire(idToken: string): void {
-    this.log.verbose('Auth', 'scheduleExpire(idToken=%s)', idToken)
+    this.log.verbose('Auth', 'scheduleExpire()')
 
     if (!idToken) {
       this.log.error('Auth', 'scheduleExpire() no idToken')
@@ -406,6 +409,9 @@ getProfile(idToken: string): Observable<any>{
 
     try {
       const expire  = this.jwtHelper.getTokenExpirationDate(idToken)
+      if (!expire) {
+        throw new Error('getTokenExpirationData(idToken) return null')
+      }
       const now     = new Date()
 
       let timeout = expire.getTime() - now.getTime()
@@ -427,9 +433,7 @@ getProfile(idToken: string): Observable<any>{
   }
 
   public async scheduleRefresh(idToken: string): Promise<void> {
-    this.log.verbose('Auth', 'scheduleRefresh(idToken=%s)', idToken)
-
-    // const idToken = await this.idToken.first().toPromise()
+    this.log.verbose('Auth', 'scheduleRefresh()')
 
     if (!idToken) {
       this.log.error('Auth', 'scheduleRefresh() error: no idToken')
@@ -439,27 +443,29 @@ getProfile(idToken: string): Observable<any>{
 
     // If the user is authenticated, use the token stream
     // provided by angular2-jwt and flatMap the token
-    const source = Observable.of(idToken).flatMap(token => {
-      if (!token) {
-        const e = new Error('scheduleRefresh() failed to get token')
-        this.log.error('Auth', e.message)
-        throw e
-      }
+    const source = of(idToken).pipe(
+      flatMap(token => {
+        if (!token) {
+          const e = new Error('scheduleRefresh() failed to get token')
+          this.log.error('Auth', e.message)
+          throw e
+        }
 
-      const decodedToken = this.jwtHelper.decodeToken(token)
-      this.log.verbose('Auth', 'scheduleRefresh() for token {email:%s,...}', decodedToken.email)
+        // const decodedToken = this.jwtHelper.decodeToken(token)
+        // this.log.verbose('Auth', 'scheduleRefresh() for token {email:%s,...}', decodedToken.email)
 
-      // The delay to generate in this case is the difference
-      // between the expiry time and the issued at time
-      const jwtIat = this.jwtHelper.decodeToken(token).iat
-      const jwtExp = this.jwtHelper.decodeToken(token).exp
-      const iat = new Date(0)
-      const exp = new Date(0)
+        // The delay to generate in this case is the difference
+        // between the expiry time and the issued at time
+        const jwtIat = this.jwtHelper.decodeToken(token).iat
+        const jwtExp = this.jwtHelper.decodeToken(token).exp
+        const iat = new Date(0)
+        const exp = new Date(0)
 
-      const delay = (exp.setUTCSeconds(jwtExp) - iat.setUTCSeconds(jwtIat))
+        const delay = (exp.setUTCSeconds(jwtExp) - iat.setUTCSeconds(jwtIat))
 
-      return Observable.interval(delay)
-    })
+        return interval(delay)
+      }),
+    )
 
     this.refreshSubscription = source.subscribe(() => {
       this.getNewJwt()
@@ -469,11 +475,12 @@ getProfile(idToken: string): Observable<any>{
   public async startupTokenRefresh() {
     this.log.verbose('Auth', 'startupTokenRefresh()')
 
-    const idToken = await this.idToken.first().toPromise()
+    const idToken = await this.idToken.pipe(first()).toPromise()
 
     // http://stackoverflow.com/a/34190965/1123955
     if (idToken) {
 
+      // TODO: implement refresh function
       // FIXME: uncomment the code below
 
       // If the user is authenticated, use the token stream
