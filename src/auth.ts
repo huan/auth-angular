@@ -13,10 +13,17 @@ import {
 import Auth0Lock    from 'auth0-lock'
 import { Brolog }   from 'brolog'
 import {
+  interval,
+  of,
   BehaviorSubject,
   Observable,
   Subscription,
-}                       from 'rxjs/Rx'
+}                       from 'rxjs'
+import {
+  distinctUntilChanged,
+  flatMap,
+  first,
+}                       from 'rxjs/operators'
 import {
   STORAGE_KEY,
 }                 from './config'
@@ -86,12 +93,12 @@ export class Auth {
     /**
      * Init asObservables
      */
-    this.accessToken  = this.accessToken$ .asObservable().distinctUntilChanged()
-    this.idToken      = this.idToken$     .asObservable().distinctUntilChanged()
-    this.refreshToken = this.refreshToken$.asObservable().distinctUntilChanged()
+    this.accessToken  = this.accessToken$ .asObservable().pipe(distinctUntilChanged())
+    this.idToken      = this.idToken$     .asObservable().pipe(distinctUntilChanged())
+    this.refreshToken = this.refreshToken$.asObservable().pipe(distinctUntilChanged())
 
-    this.valid    = this.valid$.asObservable()  .distinctUntilChanged()
-    this.profile  = this.profile$.asObservable().distinctUntilChanged()
+    this.valid    = this.valid$.asObservable()  .pipe(distinctUntilChanged())
+    this.profile  = this.profile$.asObservable().pipe(distinctUntilChanged())
   }
 
   public async init() {
@@ -156,11 +163,11 @@ export class Auth {
   public async save(): Promise<void> {
     this.log.verbose('Auth', 'save()')
 
-    localStorage.setItem(STORAGE_KEY.ACCESS_TOKEN,  await this.accessToken  .first().toPromise())
-    localStorage.setItem(STORAGE_KEY.ID_TOKEN,      await this.idToken      .first().toPromise())
-    localStorage.setItem(STORAGE_KEY.REFRESH_TOKEN, await this.refreshToken .first().toPromise())
+    localStorage.setItem(STORAGE_KEY.ACCESS_TOKEN,  await this.accessToken  .pipe(first()).toPromise())
+    localStorage.setItem(STORAGE_KEY.ID_TOKEN,      await this.idToken      .pipe(first()).toPromise())
+    localStorage.setItem(STORAGE_KEY.REFRESH_TOKEN, await this.refreshToken .pipe(first()).toPromise())
 
-    const profile = await this.profile      .first().toPromise()
+    const profile = await this.profile.pipe(first()).toPromise()
     localStorage.setItem(STORAGE_KEY.USER_PROFILE, JSON.stringify(profile))
   }
 
@@ -402,6 +409,9 @@ getProfile(idToken: string): Observable<any>{
 
     try {
       const expire  = this.jwtHelper.getTokenExpirationDate(idToken)
+      if (!expire) {
+        throw new Error('getTokenExpirationData(idToken) return null')
+      }
       const now     = new Date()
 
       let timeout = expire.getTime() - now.getTime()
@@ -433,27 +443,29 @@ getProfile(idToken: string): Observable<any>{
 
     // If the user is authenticated, use the token stream
     // provided by angular2-jwt and flatMap the token
-    const source = Observable.of(idToken).flatMap(token => {
-      if (!token) {
-        const e = new Error('scheduleRefresh() failed to get token')
-        this.log.error('Auth', e.message)
-        throw e
-      }
+    const source = of(idToken).pipe(
+      flatMap(token => {
+        if (!token) {
+          const e = new Error('scheduleRefresh() failed to get token')
+          this.log.error('Auth', e.message)
+          throw e
+        }
 
-      // const decodedToken = this.jwtHelper.decodeToken(token)
-      // this.log.verbose('Auth', 'scheduleRefresh() for token {email:%s,...}', decodedToken.email)
+        // const decodedToken = this.jwtHelper.decodeToken(token)
+        // this.log.verbose('Auth', 'scheduleRefresh() for token {email:%s,...}', decodedToken.email)
 
-      // The delay to generate in this case is the difference
-      // between the expiry time and the issued at time
-      const jwtIat = this.jwtHelper.decodeToken(token).iat
-      const jwtExp = this.jwtHelper.decodeToken(token).exp
-      const iat = new Date(0)
-      const exp = new Date(0)
+        // The delay to generate in this case is the difference
+        // between the expiry time and the issued at time
+        const jwtIat = this.jwtHelper.decodeToken(token).iat
+        const jwtExp = this.jwtHelper.decodeToken(token).exp
+        const iat = new Date(0)
+        const exp = new Date(0)
 
-      const delay = (exp.setUTCSeconds(jwtExp) - iat.setUTCSeconds(jwtIat))
+        const delay = (exp.setUTCSeconds(jwtExp) - iat.setUTCSeconds(jwtIat))
 
-      return Observable.interval(delay)
-    })
+        return interval(delay)
+      }),
+    )
 
     this.refreshSubscription = source.subscribe(() => {
       this.getNewJwt()
@@ -463,7 +475,7 @@ getProfile(idToken: string): Observable<any>{
   public async startupTokenRefresh() {
     this.log.verbose('Auth', 'startupTokenRefresh()')
 
-    const idToken = await this.idToken.first().toPromise()
+    const idToken = await this.idToken.pipe(first()).toPromise()
 
     // http://stackoverflow.com/a/34190965/1123955
     if (idToken) {
