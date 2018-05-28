@@ -1,6 +1,6 @@
 {
   "name": "auth-angular",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Authing Service/Provider for Angular",
   "scripts": {
     "clean": "shx rm -fr dist",
