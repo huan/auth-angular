@@ -41,7 +41,7 @@
     "auth0-js": "^9.4.2",
     "auth0-lock": "^11.5.2",
     "blue-tape": "^1.0.0",
-    "brolog": "^1.2.17",
+    "brolog": "^1.6.4",
     "git-scripts": "^0.2.1",
     "ng-packagr": "^3.0.0",
     "rxjs": "^6.1.0",
