@@ -210,7 +210,10 @@ export class Auth {
       },
       allowSignUp:          false,
       allowForgotPassword:  false,
-      allowedConnections: ['github'],
+      allowedConnections: [
+        'github',
+        'linkedin',
+      ],
       initialScreen: 'login',
       // usernameStyle: 'email',
       socialButtonStyle: 'big',
