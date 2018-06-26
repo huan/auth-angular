@@ -1,6 +1,6 @@
 {
   "name": "auth-angular",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Authing Service/Provider for Angular",
   "scripts": {
     "clean": "shx rm -fr dist",
@@ -47,7 +47,7 @@
     "rxjs": "^6.1.0",
     "semver": "^5.5.0",
     "shx": "^0.3.0",
-    "ts-node": "^6.0.3",
+    "ts-node": "^7.0.0",
     "tslint": "^5.9.1",
     "typescript": "2.7.*"
   },
