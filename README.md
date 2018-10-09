@@ -1,6 +1,6 @@
 # AUTH-ANGULAR
 
-[![Build Status](https://travis-ci.org/zixia/auth-angular.svg?branch=master)](https://travis-ci.org/zixia/auth-angular)
+[![Build Status](https://travis-ci.com/zixia/auth-angular.svg?branch=master)](https://travis-ci.com/zixia/auth-angular)
 [![NPM Version](https://badge.fury.io/js/auth-angular.svg)](https://www.npmjs.com/package/auth-angular)
 [![Greenkeeper badge](https://badges.greenkeeper.io/Chatie/wechaty.svg)](https://greenkeeper.io/)
 
