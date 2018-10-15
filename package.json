@@ -34,7 +34,7 @@
     "@angular/core": "^6.0.0",
     "@auth0/angular-jwt": "^2.0.0",
     "@types/auth0-js": "^8.11.6",
-    "@types/auth0-lock": "^11.4.7",
+    "@types/auth0-lock": "^11.4.8",
     "@types/blue-tape": "^0.1.31",
     "@types/node": "^10.11.5",
     "@types/semver": "^5.5.0",
