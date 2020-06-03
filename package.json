@@ -48,7 +48,7 @@
     "semver": "^5.5.0",
     "shx": "^0.3.0",
     "ts-node": "^7.0.0",
-    "tslint": "^5.9.1",
+    "tslint": "^6.1.2",
     "typescript": "~3.1.6"
   },
   "peerDependencies": {
