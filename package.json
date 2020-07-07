@@ -33,7 +33,7 @@
     "@angular/compiler-cli": "^7.1.0",
     "@angular/core": "^10.0.1",
     "@types/auth0-js": "^9.13.1",
-    "@auth0/angular-jwt": "^4.1.0",
+    "@auth0/angular-jwt": "^5.0.0",
     "@types/auth0-lock": "^11.4.7",
     "@types/blue-tape": "^0.1.31",
     "@types/node": "^14.0.9",
@@ -53,7 +53,7 @@
   },
   "peerDependencies": {
     "@angular/core": "^6.0.0",
-    "@auth0/angular-jwt": "^4.1.0",
+    "@auth0/angular-jwt": "^5.0.0",
     "auth0-js": "^9.4.2",
     "auth0-lock": "^11.5.2",
     "brolog": "^1.2.17",
