@@ -29,7 +29,7 @@
   "homepage": "https://github.com/huan/auth-angular#readme",
   "devDependencies": {
     "@angular/common": "^11.0.0",
-    "@angular/compiler": "^10.0.1",
+    "@angular/compiler": "^11.2.6",
     "@angular/compiler-cli": "^7.1.0",
     "@angular/core": "^11.0.0",
     "@types/auth0-js": "^9.13.1",
