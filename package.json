@@ -43,7 +43,7 @@
     "blue-tape": "^1.0.0",
     "brolog": "^1.6.4",
     "git-scripts": "^0.4.3",
-    "ng-packagr": "^10.0.0",
+    "ng-packagr": "^12.1.1",
     "rxjs": "^7.0.0",
     "semver": "^7.3.2",
     "shx": "^0.3.0",
